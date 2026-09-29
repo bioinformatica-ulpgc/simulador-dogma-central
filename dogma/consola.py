@@ -5,29 +5,58 @@ Colores de las bases:
     Cebadores de ARN (minúsculas en el modelo) -> fondo magenta
     Posiciones sin sintetizar -> '·' en gris
 
-Si ``colorama`` no está instalado el programa funciona igual, sin colores.
+Los colores se generan con códigos ANSI sin depender de librerías externas.
+Se pueden desactivar con la variable de entorno NO_COLOR.
 """
 
+import os
 import shutil
+import sys
 import textwrap
 
-try:
-    import colorama
-    from colorama import Back, Fore, Style
 
-    if hasattr(colorama, "just_fix_windows_console"):
-        colorama.just_fix_windows_console()
-    else:  # versiones antiguas de colorama
-        colorama.init()
-    COLORES = True
-except ImportError:  # pragma: no cover
-    COLORES = False
+def _activar_colores():
+    """Activa los códigos de color ANSI y devuelve si se pueden usar.
 
-    class _SinColor:
-        def __getattr__(self, _):
-            return ""
+    En Windows 10/11 hay que activar el modo "virtual terminal" de la consola;
+    se hace directamente con la API de Windows, sin librerías externas.
+    Se desactivan si la salida no es una terminal o si existe NO_COLOR.
+    """
+    if os.environ.get("NO_COLOR") or not hasattr(sys.stdout, "isatty") \
+            or not sys.stdout.isatty():
+        return False
+    if os.name == "nt":
+        try:
+            import ctypes
 
-    Fore = Back = Style = _SinColor()
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.GetStdHandle(-11)  # STD_OUTPUT_HANDLE
+            modo = ctypes.c_uint32()
+            if kernel32.GetConsoleMode(handle, ctypes.byref(modo)):
+                # ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004
+                kernel32.SetConsoleMode(handle, modo.value | 0x0004)
+        except Exception:
+            pass
+        os.system("")  # truco adicional que también activa ANSI en cmd
+    return True
+
+
+COLORES = _activar_colores()
+
+
+class _Ansi:
+    """Códigos de escape ANSI (vacíos si no hay colores)."""
+
+    def __init__(self, codigos):
+        for nombre, codigo in codigos.items():
+            setattr(self, nombre, f"\033[{codigo}m" if COLORES else "")
+
+
+Fore = _Ansi({"BLACK": 30, "RED": 31, "GREEN": 32, "YELLOW": 33, "BLUE": 34,
+              "MAGENTA": 35, "CYAN": 36, "WHITE": 37})
+Back = _Ansi({"BLACK": 40, "RED": 41, "GREEN": 42, "YELLOW": 43, "BLUE": 44,
+              "MAGENTA": 45, "CYAN": 46, "WHITE": 47})
+Style = _Ansi({"BRIGHT": 1, "DIM": 2, "RESET_ALL": 0})
 
 from .replicacion import ENZIMAS as ENZIMAS_REPLICACION
 from .traduccion import AMINOACIDOS, CODIGO_GENETICO
