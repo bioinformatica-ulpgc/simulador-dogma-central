@@ -8,9 +8,11 @@ Uso directo desde la línea de comandos (ejemplos):
     python main.py --secuencia ATGGCTAGCAAATAA --modo continuo
     python main.py --aleatoria 12 --semilla 7 --modo resumen
     python main.py --archivo ejemplos/egfp.fasta
+    python main.py --ejemplo --modo resumen --sin-imagenes
 """
 
 import argparse
+import os
 import sys
 
 from dogma import consola as ui
@@ -38,8 +40,30 @@ MODOS = {"paso": "Paso a paso (Enter entre pasos)",
 # --------------------------------------------------------------------------
 # Simulación completa
 # --------------------------------------------------------------------------
-def simular(adn, modo="paso", descripcion=None):
-    """Ejecuta replicación, transcripción y traducción y las muestra."""
+def generar_y_mostrar_imagenes(rep, tra, trad, carpeta="resultados", abrir=None):
+    """Genera las figuras PNG y, si se pide, abre la carpeta en Windows."""
+    try:
+        from dogma.visualizacion import generar_imagenes
+    except ImportError:
+        ui.aviso("No se pueden generar imágenes: falta matplotlib "
+                 "(pip install matplotlib).")
+        return []
+    ui.subtitulo("Imágenes")
+    rutas = generar_imagenes(rep, tra, trad, carpeta)
+    for r in rutas:
+        ui.ok(os.path.abspath(r))
+    if abrir is None and hasattr(os, "startfile"):
+        abrir = input("   ¿Abrir la carpeta de imágenes? [s/N]: ").strip().lower() == "s"
+    if abrir and hasattr(os, "startfile"):
+        os.startfile(os.path.abspath(carpeta))
+    return rutas
+
+
+def simular(adn, modo="paso", descripcion=None, imagenes=None, carpeta="resultados"):
+    """Ejecuta replicación, transcripción y traducción y las muestra.
+
+    ``imagenes``: True genera las figuras, False no, None pregunta al usuario.
+    """
     validar_adn(adn)
     ui.titulo("Simulador del dogma central de la biología molecular")
     if descripcion:
@@ -58,6 +82,15 @@ def simular(adn, modo="paso", descripcion=None):
     modo = ui.pausa(modo)
     ui.mostrar_traduccion(trad, modo)
     ui.mostrar_resumen(rep, tra, trad)
+
+    if imagenes is None:
+        imagenes = input("\n   ¿Generar las imágenes de cada etapa (PNG)? [S/n]: "
+                         ).strip().lower() != "n"
+        abrir = None
+    else:
+        abrir = False
+    if imagenes:
+        generar_y_mostrar_imagenes(rep, tra, trad, carpeta, abrir)
     return rep, tra, trad
 
 
@@ -192,18 +225,24 @@ def main(argv=None):
     p.add_argument("--semilla", type=int, help="semilla para --aleatoria")
     p.add_argument("--modo", choices=MODOS, default="paso",
                    help="paso (por defecto), continuo o resumen")
+    p.add_argument("--sin-imagenes", action="store_true",
+                   help="no genera las imágenes PNG")
+    p.add_argument("--carpeta", default="resultados",
+                   help="carpeta donde se guardan las imágenes (por defecto: resultados)")
     args = p.parse_args(argv)
+    img = {"imagenes": not args.sin_imagenes, "carpeta": args.carpeta}
 
     try:
         if args.secuencia:
-            simular(limpiar_secuencia(args.secuencia), args.modo)
+            simular(limpiar_secuencia(args.secuencia), args.modo, **img)
         elif args.aleatoria:
             simular(generar_gen_aleatorio(args.aleatoria, semilla=args.semilla),
-                    args.modo, f"Gen aleatorio de {args.aleatoria} codones")
+                    args.modo, f"Gen aleatorio de {args.aleatoria} codones", **img)
         elif args.ejemplo:
-            simular(SECUENCIA_EJEMPLO, args.modo, DESCRIPCION_EJEMPLO)
+            simular(SECUENCIA_EJEMPLO, args.modo, DESCRIPCION_EJEMPLO, **img)
         elif args.archivo:
-            simular(leer_archivo(args.archivo), args.modo, f"Archivo: {args.archivo}")
+            simular(leer_archivo(args.archivo), args.modo, f"Archivo: {args.archivo}",
+                    **img)
         else:
             menu()
     except ValueError as e:
