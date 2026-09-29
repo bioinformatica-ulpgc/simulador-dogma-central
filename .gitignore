@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# Imágenes generadas al ejecutar el simulador
+resultados/*
+!resultados/.gitkeep
+
+# Editor / sistema
+.vscode/
+.DS_Store
+Thumbs.db
