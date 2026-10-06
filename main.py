@@ -33,6 +33,9 @@ SECUENCIA_EJEMPLO = "GCCACC" "ATGGTGAGCAAGGGCGAGGAGCTGTTCACCGGG" "TAA" "GCGGCC"
 DESCRIPCION_EJEMPLO = ("Inicio del gen EGFP (proteína verde fluorescente) con "
                        "secuencia Kozak y codón de parada añadido")
 
+# Por encima de esta longitud las figuras tardan minutos y no se pueden leer
+MAX_PB_IMAGENES = 300
+
 MODOS = {"paso": "Paso a paso (Enter entre pasos)",
          "continuo": "Todo seguido, sin pausas",
          "resumen": "Solo resultados de cada etapa"}
@@ -84,13 +87,16 @@ def simular(adn, modo="paso", descripcion=None, imagenes=None, carpeta="resultad
     ui.mostrar_traduccion(trad, modo)
     ui.mostrar_resumen(rep, tra, trad)
 
-    if imagenes is None:
+    if imagenes is None and len(adn) <= MAX_PB_IMAGENES:
         imagenes = input("\n   ¿Generar las imágenes de cada etapa (PNG)? [S/n]: "
                          ).strip().lower() != "n"
         abrir = None
     else:
         abrir = False
-    if imagenes:
+    if imagenes is not False and len(adn) > MAX_PB_IMAGENES:
+        ui.aviso(f"No se generan imágenes: la secuencia tiene {len(adn)} pb y las "
+                 f"figuras solo se leen bien hasta {MAX_PB_IMAGENES} pb.")
+    elif imagenes:
         generar_y_mostrar_imagenes(rep, tra, trad, carpeta, abrir)
     return rep, tra, trad
 

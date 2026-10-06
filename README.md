@@ -71,6 +71,8 @@ Después de elegir la secuencia se elige el modo de visualización:
 | **Resumen** | Solo el resultado de cada etapa y el flujo completo. |
 
 Al terminar, el programa pregunta si se quieren generar las imágenes de cada etapa.
+Las imágenes solo se generan para secuencias de hasta 300 pb; con secuencias
+más largas (como lacZ, 3075 pb) se muestra solo la simulación en texto.
 
 ### Línea de comandos
 
