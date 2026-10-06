@@ -56,7 +56,7 @@ python main.py
    1. Introducir una secuencia de ADN
    2. Generar un gen aleatorio
    3. Usar la secuencia de ejemplo (inicio del gen EGFP)
-   4. Cargar una secuencia desde un archivo (.txt / FASTA)
+   4. Cargar una secuencia desde un archivo (.txt / FASTA / GenBank)
    5. Ver las enzimas y moléculas que intervienen
    6. Ver el código genético
    0. Salir
@@ -79,6 +79,7 @@ python main.py --ejemplo                               # secuencia de ejemplo, p
 python main.py --secuencia ATGGCTAGCAAATAA --modo continuo
 python main.py --aleatoria 12 --semilla 7 --modo resumen
 python main.py --archivo ejemplos/egfp.fasta
+python main.py --archivo ejemplos/lacZ_Ecoli_NC_000913.3.gb --modo resumen
 python main.py --ejemplo --modo resumen --sin-imagenes
 python main.py --help
 ```
@@ -89,7 +90,7 @@ python main.py --help
 | `--aleatoria N` | Genera un gen aleatorio con un AUG, `N` codones y un codón de parada. |
 | `--semilla S` | Semilla para que el gen aleatorio sea reproducible. |
 | `--ejemplo` | Inicio del gen **EGFP** (proteína verde fluorescente) con secuencia Kozak. |
-| `--archivo RUTA` | Lee la secuencia de un archivo de texto o FASTA. |
+| `--archivo RUTA` | Lee la secuencia de un archivo de texto, FASTA o GenBank (`.gb`, sección `ORIGIN`). |
 | `--modo` | `paso` (por defecto), `continuo` o `resumen`. |
 | `--sin-imagenes` | No genera las figuras PNG. |
 | `--carpeta DIR` | Carpeta de salida de las imágenes (por defecto `resultados/`). |
@@ -231,7 +232,9 @@ simulador-dogma-central/
 │   ├── consola.py          Visualización en texto con colores
 │   └── visualizacion.py    Figuras PNG con matplotlib
 ├── ejemplos/
-│   └── egfp.fasta          Secuencia de ejemplo en formato FASTA
+│   ├── egfp.fasta          Secuencia de ejemplo en formato FASTA
+│   ├── lacZ_Ecoli_NC_000913.3.fasta  Gen lacZ de E. coli (FASTA)
+│   └── lacZ_Ecoli_NC_000913.3.gb     Gen lacZ de E. coli (GenBank)
 ├── docs/img/               Imágenes de ejemplo usadas en este README
 └── resultados/             Imágenes generadas al ejecutar (no se suben al repositorio)
 ```
@@ -265,6 +268,10 @@ python -m dogma.traduccion
   explican, pero no se simulan.
 - La traducción empieza en el **primer AUG** y usa el **código genético
   estándar**.
+- Comprobación con un gen real: con el gen **lacZ** de *E. coli*
+  (`ejemplos/lacZ_Ecoli_NC_000913.3.gb`, 3075 pb) se obtiene la
+  β-galactosidasa de 1024 aminoácidos, igual que la traducción oficial del
+  registro GenBank (campo `/translation`).
 - Los nombres de las enzimas son los de *E. coli*, con el equivalente eucariota
   entre paréntesis.
 

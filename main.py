@@ -8,6 +8,7 @@ Uso directo desde la línea de comandos (ejemplos):
     python main.py --secuencia ATGGCTAGCAAATAA --modo continuo
     python main.py --aleatoria 12 --semilla 7 --modo resumen
     python main.py --archivo ejemplos/egfp.fasta
+    python main.py --archivo ejemplos/lacZ_Ecoli_NC_000913.3.gb --modo resumen
     python main.py --ejemplo --modo resumen --sin-imagenes
 """
 
@@ -98,9 +99,18 @@ def simular(adn, modo="paso", descripcion=None, imagenes=None, carpeta="resultad
 # Entrada de datos
 # --------------------------------------------------------------------------
 def leer_archivo(ruta):
-    """Lee una secuencia de un archivo de texto o FASTA (ignora líneas '>')."""
+    """Lee una secuencia de un archivo de texto, FASTA o GenBank.
+
+    - FASTA / texto: se ignoran las líneas de cabecera ('>' o ';').
+    - GenBank (.gb): la secuencia está entre la línea ORIGIN y '//'.
+    """
     with open(ruta, encoding="utf-8") as f:
-        lineas = [l for l in f if not l.startswith(">") and not l.startswith(";")]
+        lineas = f.readlines()
+    if any(l.startswith("ORIGIN") for l in lineas):
+        inicio = next(i for i, l in enumerate(lineas) if l.startswith("ORIGIN"))
+        lineas = [l for l in lineas[inicio + 1:] if not l.startswith("//")]
+    else:
+        lineas = [l for l in lineas if not l.startswith(">") and not l.startswith(";")]
     return limpiar_secuencia("".join(lineas))
 
 
@@ -159,7 +169,7 @@ def menu():
         print("   1. Introducir una secuencia de ADN")
         print("   2. Generar un gen aleatorio")
         print("   3. Usar la secuencia de ejemplo (inicio del gen EGFP)")
-        print("   4. Cargar una secuencia desde un archivo (.txt / FASTA)")
+        print("   4. Cargar una secuencia desde un archivo (.txt / FASTA / GenBank)")
         print("   5. Ver las enzimas y moléculas que intervienen")
         print("   6. Ver el código genético")
         print("   0. Salir")
@@ -221,7 +231,7 @@ def main(argv=None):
                    help="genera un gen aleatorio con N codones")
     g.add_argument("--ejemplo", action="store_true",
                    help="usa la secuencia de ejemplo (inicio del gen EGFP)")
-    g.add_argument("--archivo", help="lee la secuencia de un archivo .txt o FASTA")
+    g.add_argument("--archivo", help="lee la secuencia de un archivo .txt, FASTA o GenBank")
     p.add_argument("--semilla", type=int, help="semilla para --aleatoria")
     p.add_argument("--modo", choices=MODOS, default="paso",
                    help="paso (por defecto), continuo o resumen")
